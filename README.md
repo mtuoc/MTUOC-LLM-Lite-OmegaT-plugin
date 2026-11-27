@@ -1,10 +1,10 @@
 # MTUOC-LLM-Lite — OmegaT Machine Translation Plugin
 
-🌐 **Idioma / Language:** [Català](#català) | [English](#english) | [Español](#español)
+🌐 **Idioma / Language:** [Català](#catala) | [English](#english) | [Español](#espanol)
 
 ---
 
-## Català
+## <a name="catala"></a>Català
 
 Connector de traducció automàtica per a **OmegaT 6.x** que permet connectar-se a qualsevol servidor compatible amb l'API d'OpenAI, com ara un proxy **LiteLLM**, **Ollama** o **vLLM**.
 

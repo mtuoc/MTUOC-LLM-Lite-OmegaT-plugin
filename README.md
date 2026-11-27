@@ -25,7 +25,7 @@ Connector de traducció automàtica per a **OmegaT 6.x** que permet connectar-se
 1. Obriu OmegaT i aneu a **Preferències → Traducció automàtica** (*Preferences → Machine Translation*).
 2. Activeu la casella **MTUOC-LLM-Lite** i feu clic al botó **Configura** (*Configure*).
 
-<img width="912" height="612" alt="image" src="https://github.com/user-attachments/assets/f699309b-46a4-4cde-933d-05e781fdb47d" />
+<img width="450" height="300" alt="image" src="https://github.com/user-attachments/assets/f699309b-46a4-4cde-933d-05e781fdb47d" />
 
 
 3. Ompliu els paràmetres del servidor:
@@ -37,7 +37,8 @@ Connector de traducció automàtica per a **OmegaT 6.x** que permet connectar-se
    - **System Prompt / User Prompt:** Podeu deixar els valors per defecte o adaptar les instruccions de traducció.
 4. Premeu **Test Connection** per comprovar que el servidor respon correctament i feu clic a **OK** per desar els canvis.
 
-![Finestra de configuració de MTUOC-LLM-Lite](docs/screenshot-config.png)
+<img width="450" height="300" alt="image" src="https://github.com/user-attachments/assets/a1df078f-7eee-4a93-b31d-9f85dc76e8fe" />
+
 
 ### Compilació des del codi font
 
@@ -76,7 +77,7 @@ Machine translation plugin for **OmegaT 6.x** that connects to any OpenAI-compat
 1. Open OmegaT and go to **Preferences → Machine Translation**.
 2. Check the **MTUOC-LLM-Lite** box and click **Configure**.
 
-<img width="912" height="612" alt="image" src="https://github.com/user-attachments/assets/b2f25448-807b-4362-a417-c1d03343fabd" />
+<img width="450" height="300" alt="image" src="https://github.com/user-attachments/assets/b2f25448-807b-4362-a417-c1d03343fabd" />
 
 3. Fill in the server parameters:
    - **Server Base URL (/v1):** Server endpoint URL ending in `/v1` (e.g., `http://localhost:8004/v1`).
@@ -87,7 +88,8 @@ Machine translation plugin for **OmegaT 6.x** that connects to any OpenAI-compat
    - **System Prompt / User Prompt:** Keep the default templates or customize the translation instructions.
 4. Click **Test Connection** to verify that the server responds properly and click **OK** to save your settings.
 
-![MTUOC-LLM-Lite configuration window](docs/screenshot-config.png)
+<img width="450" height="300" alt="image" src="https://github.com/user-attachments/assets/1d778ce5-1f1c-4809-a0c2-90e15623b98a" />
+
 
 ### Build from Source
 
@@ -126,7 +128,7 @@ Complemento de traducción automática para **OmegaT 6.x** que permite conectars
 1. Abra OmegaT y vaya a **Preferencias → Traducción automática** (*Preferences → Machine Translation*).
 2. Active la casilla **MTUOC-LLM-Lite** y haga clic en el botón **Configurar** (*Configure*).
 
-<img width="912" height="612" alt="image" src="https://github.com/user-attachments/assets/561f57ed-6c79-402f-9856-a5ca3c15125d" />
+<img width="450" height="300" alt="image" src="https://github.com/user-attachments/assets/561f57ed-6c79-402f-9856-a5ca3c15125d" />
 
 
 3. Rellene los parámetros del servidor:
@@ -138,7 +140,8 @@ Complemento de traducción automática para **OmegaT 6.x** que permite conectars
    - **System Prompt / User Prompt:** Puede dejar los valores por defecto o adaptar las instrucciones de traducción.
 4. Pulse **Test Connection** para comprobar que el servidor responde correctamente y haga clic en **OK** para guardar los cambios.
 
-![Ventana de configuración de MTUOC-LLM-Lite](docs/screenshot-config.png)
+<img width="450" height="300" alt="image" src="https://github.com/user-attachments/assets/3e93ae88-0c87-4efc-824e-764e3e37f735" />
+
 
 ### Compilación desde el código fuente
 

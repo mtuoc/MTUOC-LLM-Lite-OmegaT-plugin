@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -29,8 +30,10 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 
 import org.omegat.core.Core;
@@ -44,12 +47,18 @@ public class MTUOCLLMLite extends BaseTranslate {
     private static final String PREF_URL = "mtuoc_llm_lite_api_url";
     private static final String PREF_API_KEY = "mtuoc_llm_lite_api_key";
     private static final String PREF_MODEL = "mtuoc_llm_lite_model";
+    private static final String PREF_TEMPERATURE = "mtuoc_llm_lite_temperature";
+    private static final String PREF_REASONING = "mtuoc_llm_lite_reasoning_effort";
     private static final String PREF_SYSTEM_PROMPT = "mtuoc_llm_lite_system_prompt";
     private static final String PREF_USER_PROMPT = "mtuoc_llm_lite_user_prompt";
 
-    private static final String DEFAULT_URL = "http://localhost:8000/v1";
+    private static final String DEFAULT_URL = "http://localhost:8004/v1";
     private static final String DEFAULT_API_KEY = "EMPTY";
     private static final String DEFAULT_MODEL = "qwen3.8-27b";
+    private static final double DEFAULT_TEMPERATURE = 0.1;
+    private static final String DEFAULT_REASONING = "none";
+    private static final String[] REASONING_OPTIONS = {"none", "default", "low", "medium", "high"};
+
     private static final String DEFAULT_SYSTEM_PROMPT =
             "You are a professional translator. Translate the user's text accurately, naturally, " +
             "and fluently. Preserve all inline formatting tags (such as <g0>, </g0>, <x1/>) in their " +
@@ -64,6 +73,7 @@ public class MTUOCLLMLite extends BaseTranslate {
     public MTUOCLLMLite() {
         super();
         this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
     }
@@ -99,10 +109,13 @@ public class MTUOCLLMLite extends BaseTranslate {
         String baseUrl = normalizeUrl(Preferences.getPreferenceDefault(PREF_URL, DEFAULT_URL));
         String apiKey = Preferences.getPreferenceDefault(PREF_API_KEY, DEFAULT_API_KEY);
         String model = Preferences.getPreferenceDefault(PREF_MODEL, DEFAULT_MODEL);
+        double temperature = parseTemperature(Preferences.getPreferenceDefault(PREF_TEMPERATURE, String.valueOf(DEFAULT_TEMPERATURE)));
+        String reasoningEffort = Preferences.getPreferenceDefault(PREF_REASONING, DEFAULT_REASONING);
         String systemPrompt = Preferences.getPreferenceDefault(PREF_SYSTEM_PROMPT, DEFAULT_SYSTEM_PROMPT);
         String userTemplate = Preferences.getPreferenceDefault(PREF_USER_PROMPT, DEFAULT_USER_PROMPT);
 
-        String cacheKey = model + "|" + sLang.getLanguage() + "|" + tLang.getLanguage() + "|" + text;
+        String cacheKey = model + "|" + temperature + "|" + reasoningEffort + "|"
+                + sLang.getLanguage() + "|" + tLang.getLanguage() + "|" + text;
         String cached = cache.get(cacheKey);
         if (cached != null) {
             return cached;
@@ -116,7 +129,9 @@ public class MTUOCLLMLite extends BaseTranslate {
                 .replace("{target_lang}", targetLangName)
                 .replace("{text}", text);
 
-        String translated = sendChatCompletion(baseUrl, apiKey, model, systemPrompt, userPrompt, 90);
+        String translated = sendChatCompletion(
+                baseUrl, apiKey, model, temperature, reasoningEffort, systemPrompt, userPrompt, 90
+        );
         if (!translated.isEmpty()) {
             cache.put(cacheKey, translated);
         }
@@ -124,21 +139,28 @@ public class MTUOCLLMLite extends BaseTranslate {
     }
 
     private String sendChatCompletion(String baseUrl, String apiKey, String model,
+                                      double temperature, String reasoningEffort,
                                       String systemPrompt, String userPrompt, int timeoutSeconds) throws Exception {
-        String jsonPayload = "{"
-                + "\"model\":\"" + escapeJson(model) + "\","
-                + "\"temperature\":0.1,"
-                + "\"messages\":["
-                + "{\"role\":\"system\",\"content\":\"" + escapeJson(systemPrompt) + "\"},"
-                + "{\"role\":\"user\",\"content\":\"" + escapeJson(userPrompt) + "\"}"
-                + "]"
-                + "}";
+        StringBuilder jsonBuilder = new StringBuilder();
+        jsonBuilder.append("{")
+                .append("\"model\":\"").append(escapeJson(model)).append("\",")
+                .append(String.format(Locale.US, "\"temperature\":%.2f,", temperature));
+
+        if (reasoningEffort != null && !reasoningEffort.trim().isEmpty()
+                && !"default".equalsIgnoreCase(reasoningEffort.trim())) {
+            jsonBuilder.append("\"reasoning_effort\":\"").append(escapeJson(reasoningEffort.trim())).append("\",");
+        }
+
+        jsonBuilder.append("\"messages\":[")
+                .append("{\"role\":\"system\",\"content\":\"").append(escapeJson(systemPrompt)).append("\"},")
+                .append("{\"role\":\"user\",\"content\":\"").append(escapeJson(userPrompt)).append("\"}")
+                .append("]}");
 
         HttpRequest.Builder reqBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/chat/completions"))
                 .timeout(Duration.ofSeconds(timeoutSeconds))
                 .header("Content-Type", "application/json; charset=UTF-8")
-                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload, StandardCharsets.UTF_8));
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBuilder.toString(), StandardCharsets.UTF_8));
 
         if (apiKey != null && !apiKey.trim().isEmpty()) {
             reqBuilder.header("Authorization", "Bearer " + apiKey.trim());
@@ -162,6 +184,8 @@ public class MTUOCLLMLite extends BaseTranslate {
         String currentUrl = Preferences.getPreferenceDefault(PREF_URL, DEFAULT_URL);
         String currentKey = Preferences.getPreferenceDefault(PREF_API_KEY, DEFAULT_API_KEY);
         String currentModel = Preferences.getPreferenceDefault(PREF_MODEL, DEFAULT_MODEL);
+        double currentTemp = parseTemperature(Preferences.getPreferenceDefault(PREF_TEMPERATURE, String.valueOf(DEFAULT_TEMPERATURE)));
+        String currentReasoning = Preferences.getPreferenceDefault(PREF_REASONING, DEFAULT_REASONING);
         String currentSysPrompt = Preferences.getPreferenceDefault(PREF_SYSTEM_PROMPT, DEFAULT_SYSTEM_PROMPT);
         String currentUserPrompt = Preferences.getPreferenceDefault(PREF_USER_PROMPT, DEFAULT_USER_PROMPT);
 
@@ -177,7 +201,7 @@ public class MTUOCLLMLite extends BaseTranslate {
 
         // 1. Base URL
         JTextField urlField = new JTextField(currentUrl, 34);
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.0;
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 1; gbc.weightx = 0.0;
         panel.add(new JLabel("Server Base URL (/v1):"), gbc);
         gbc.gridx = 1; gbc.gridy = 0; gbc.gridwidth = 3; gbc.weightx = 1.0;
         panel.add(urlField, gbc);
@@ -193,6 +217,11 @@ public class MTUOCLLMLite extends BaseTranslate {
         JComboBox<String> modelCombo = new JComboBox<>(new String[]{currentModel});
         modelCombo.setEditable(true);
         modelCombo.setSelectedItem(currentModel);
+
+        // 4. Temperature & Reasoning Effort controls (defined before Test button so Test uses them)
+        JSpinner tempSpinner = new JSpinner(new SpinnerNumberModel(currentTemp, 0.0, 2.0, 0.05));
+        JComboBox<String> reasoningCombo = new JComboBox<>(REASONING_OPTIONS);
+        reasoningCombo.setSelectedItem(currentReasoning);
 
         JButton refreshBtn = new JButton("Refresh Models");
         refreshBtn.addActionListener(e -> {
@@ -237,6 +266,8 @@ public class MTUOCLLMLite extends BaseTranslate {
             Object item = modelCombo.getEditor().getItem();
             String selectedModel = (item != null && !item.toString().trim().isEmpty())
                     ? item.toString().trim() : DEFAULT_MODEL;
+            double selectedTemp = ((Number) tempSpinner.getValue()).doubleValue();
+            String selectedReasoning = (String) reasoningCombo.getSelectedItem();
 
             new Thread(() -> {
                 try {
@@ -245,9 +276,11 @@ public class MTUOCLLMLite extends BaseTranslate {
                             url,
                             key,
                             selectedModel,
+                            selectedTemp,
+                            selectedReasoning,
                             "You are a connection test assistant.",
                             "Reply with exactly one word: OK",
-                            20
+                            30
                     );
                     long elapsedMs = System.currentTimeMillis() - start;
                     SwingUtilities.invokeLater(() -> {
@@ -256,6 +289,7 @@ public class MTUOCLLMLite extends BaseTranslate {
                         JOptionPane.showMessageDialog(dialog,
                                 "Connection successful!\n"
                                 + "Model: " + selectedModel + "\n"
+                                + "Reasoning: " + selectedReasoning + " | Temp: " + selectedTemp + "\n"
                                 + "Response: " + reply + "\n"
                                 + "Latency: " + elapsedMs + " ms",
                                 "MTUOC-LLM-Lite Connection Test", JOptionPane.INFORMATION_MESSAGE);
@@ -281,28 +315,38 @@ public class MTUOCLLMLite extends BaseTranslate {
         gbc.gridx = 3; gbc.gridy = 2; gbc.gridwidth = 1; gbc.weightx = 0.0;
         panel.add(testBtn, gbc);
 
-        // 4. System Prompt
+        // Row 3: Temperature and Reasoning Effort
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 1; gbc.weightx = 0.0;
+        panel.add(new JLabel("Temperature:"), gbc);
+        gbc.gridx = 1; gbc.gridy = 3; gbc.gridwidth = 1; gbc.weightx = 0.5;
+        panel.add(tempSpinner, gbc);
+        gbc.gridx = 2; gbc.gridy = 3; gbc.gridwidth = 1; gbc.weightx = 0.0;
+        panel.add(new JLabel("Reasoning Effort:"), gbc);
+        gbc.gridx = 3; gbc.gridy = 3; gbc.gridwidth = 1; gbc.weightx = 0.5;
+        panel.add(reasoningCombo, gbc);
+
+        // 5. System Prompt
         JTextArea sysArea = new JTextArea(currentSysPrompt, 4, 42);
         sysArea.setLineWrap(true);
         sysArea.setWrapStyleWord(true);
         JScrollPane sysScroll = new JScrollPane(sysArea);
         sysScroll.setPreferredSize(new Dimension(520, 90));
 
-        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 4; gbc.weightx = 1.0;
+        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 4; gbc.weightx = 1.0;
         panel.add(new JLabel("System Prompt (translator role and rules):"), gbc);
-        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 4; gbc.fill = GridBagConstraints.BOTH; gbc.weighty = 0.5;
+        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 4; gbc.fill = GridBagConstraints.BOTH; gbc.weighty = 0.5;
         panel.add(sysScroll, gbc);
 
-        // 5. User Prompt
+        // 6. User Prompt
         JTextArea userArea = new JTextArea(currentUserPrompt, 4, 42);
         userArea.setLineWrap(true);
         userArea.setWrapStyleWord(true);
         JScrollPane userScroll = new JScrollPane(userArea);
         userScroll.setPreferredSize(new Dimension(520, 90));
 
-        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 4; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weighty = 0.0;
+        gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 4; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weighty = 0.0;
         panel.add(new JLabel("User Prompt (placeholders: {source_lang}, {target_lang}, {text}):"), gbc);
-        gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 4; gbc.fill = GridBagConstraints.BOTH; gbc.weighty = 0.5;
+        gbc.gridx = 0; gbc.gridy = 7; gbc.gridwidth = 4; gbc.fill = GridBagConstraints.BOTH; gbc.weighty = 0.5;
         panel.add(userScroll, gbc);
 
         // OK / Cancel buttons
@@ -315,12 +359,16 @@ public class MTUOCLLMLite extends BaseTranslate {
             String savedKey = new String(keyField.getPassword()).trim();
             Object item = modelCombo.getEditor().getItem();
             String savedModel = (item != null) ? item.toString().trim() : DEFAULT_MODEL;
+            double savedTemp = ((Number) tempSpinner.getValue()).doubleValue();
+            String savedReasoning = (String) reasoningCombo.getSelectedItem();
             String savedSys = sysArea.getText();
             String savedUser = userArea.getText();
 
             Preferences.setPreference(PREF_URL, savedUrl.isEmpty() ? DEFAULT_URL : savedUrl);
             Preferences.setPreference(PREF_API_KEY, savedKey);
             Preferences.setPreference(PREF_MODEL, savedModel.isEmpty() ? DEFAULT_MODEL : savedModel);
+            Preferences.setPreference(PREF_TEMPERATURE, String.format(Locale.US, "%.2f", savedTemp));
+            Preferences.setPreference(PREF_REASONING, savedReasoning != null ? savedReasoning : DEFAULT_REASONING);
             Preferences.setPreference(PREF_SYSTEM_PROMPT, savedSys);
             Preferences.setPreference(PREF_USER_PROMPT, savedUser);
 
@@ -375,6 +423,18 @@ public class MTUOCLLMLite extends BaseTranslate {
             throw new Exception("No models found in server response.");
         }
         return models;
+    }
+
+    private static double parseTemperature(String val) {
+        if (val == null || val.trim().isEmpty()) {
+            return DEFAULT_TEMPERATURE;
+        }
+        try {
+            double parsed = Double.parseDouble(val.trim().replace(',', '.'));
+            return Math.max(0.0, Math.min(2.0, parsed));
+        } catch (NumberFormatException e) {
+            return DEFAULT_TEMPERATURE;
+        }
     }
 
     private static String normalizeUrl(String url) {

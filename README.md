@@ -24,6 +24,10 @@ Connector de traducció automàtica per a **OmegaT 6.x** que permet connectar-se
 
 1. Obriu OmegaT i aneu a **Preferències → Traducció automàtica** (*Preferences → Machine Translation*).
 2. Activeu la casella **MTUOC-LLM-Lite** i feu clic al botó **Configura** (*Configure*).
+
+<img width="912" height="612" alt="image" src="https://github.com/user-attachments/assets/f699309b-46a4-4cde-933d-05e781fdb47d" />
+
+
 3. Ompliu els paràmetres del servidor:
    - **Server Base URL (/v1):** Adreça del servidor acabada en `/v1` (per exemple, `http://localhost:8004/v1`).
    - **API Key (Bearer):** Clau d'accés configurada al servidor (o `EMPTY` si no en requereix).
@@ -71,6 +75,9 @@ Machine translation plugin for **OmegaT 6.x** that connects to any OpenAI-compat
 
 1. Open OmegaT and go to **Preferences → Machine Translation**.
 2. Check the **MTUOC-LLM-Lite** box and click **Configure**.
+
+<img width="912" height="612" alt="image" src="https://github.com/user-attachments/assets/b2f25448-807b-4362-a417-c1d03343fabd" />
+
 3. Fill in the server parameters:
    - **Server Base URL (/v1):** Server endpoint URL ending in `/v1` (e.g., `http://localhost:8004/v1`).
    - **API Key (Bearer):** Access key configured on the server (or `EMPTY` if none is required).
@@ -118,6 +125,10 @@ Complemento de traducción automática para **OmegaT 6.x** que permite conectars
 
 1. Abra OmegaT y vaya a **Preferencias → Traducción automática** (*Preferences → Machine Translation*).
 2. Active la casilla **MTUOC-LLM-Lite** y haga clic en el botón **Configurar** (*Configure*).
+
+<img width="912" height="612" alt="image" src="https://github.com/user-attachments/assets/561f57ed-6c79-402f-9856-a5ca3c15125d" />
+
+
 3. Rellene los parámetros del servidor:
    - **Server Base URL (/v1):** Dirección del servidor terminada en `/v1` (por ejemplo, `http://localhost:8004/v1`).
    - **API Key (Bearer):** Clave de acceso configurada en el servidor (o `EMPTY` si no requiere).

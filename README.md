@@ -1,10 +1,6 @@
 # MTUOC-LLM-Lite — OmegaT Machine Translation Plugin
 
-🌐 **Idioma / Language:** [Català](#catalan) | [English](#english) | [Español](#spanish)
-
----
-
-## Catalan
+## Català
 
 Connector de traducció automàtica per a **OmegaT 6.x** que permet connectar-se a qualsevol servidor compatible amb l'API d'OpenAI, com ara un proxy **LiteLLM**, **Ollama** o **vLLM**.
 
@@ -17,7 +13,7 @@ Connector de traducció automàtica per a **OmegaT 6.x** que permet connectar-se
 
 ### Instal·lació
 
-1. Descarregueu l'última versió del fitxer `.jar` del connector (per exemple, `MTUOC-LLM-Lite-20261127.jar`) des de la secció **[Releases](../../releases)** d'aquest repositori.
+1. Descarregueu l'última versió del fitxer `.jar` del connector (`MTUOC-LLM-Lite-20261127.jar`) des de la secció **[Releases](../../releases)** d'aquest repositori.
 2. Copieu el fitxer `.jar` a la carpeta `plugins` de la vostra instal·lació d'OmegaT:
    - **macOS:** `~/Library/Preferences/OmegaT/plugins/` *(o bé `~/.omegat/plugins/`)*
    - **Linux:** `~/.omegat/plugins/`
